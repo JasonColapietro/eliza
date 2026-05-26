@@ -178,19 +178,6 @@ jobs:
               # tsup's worker thread loads an un-patched rollup.js with
               # `await` at module-top-level → SyntaxError.
               bun packages/scripts/patch-tsup-dts.mjs >/dev/null || true
-              # The per-plugin `bun install --ignore-scripts` above skips the
-              # repo postinstall, so workspace symlinks bun drops during its
-              # re-resolve are never restored. Re-run the ensure step so the
-              # plugin's own package + deps resolve at build time.
-              node packages/scripts/ensure-workspace-symlinks.mjs || true
-              if [[ "$plugin" == "plugin-local-inference" ]]; then
-                echo "::group::DEBUG plugin-local-inference resolution context"
-                echo "cwd build dir contents (src/services):"
-                ls -la "$plugin_dir/src/services" | grep -i dflash || true
-                echo "self symlink:"; ls -la "node_modules/@elizaos/plugin-local-inference" || true
-                echo "bun version on runner:"; bun --version || true
-                echo "::endgroup::"
-              fi
               (cd "$plugin_dir" && bun run build)
               echo "::endgroup::"
             fi
