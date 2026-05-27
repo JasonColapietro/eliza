@@ -668,12 +668,8 @@ export async function flushObservationBuffer(
     }
 
     return observations;
-  } catch (err) {
-    warnRuntime(
-      runtime,
-      "[trajectory-persistence] observation flush failed",
-      err,
-    );
+  } catch {
+    // Non-critical — observations are best-effort
     return [];
   } finally {
     delete runtimeRecord.__orchestratorTrajectoryCtx;
@@ -775,12 +771,7 @@ export async function computeBySource(
       if (src) bySource[src] = toNumber(r.cnt, 0);
     }
     return bySource;
-  } catch (err) {
-    warnRuntime(
-      runtime,
-      "[trajectory-persistence] source aggregation failed",
-      err,
-    );
+  } catch {
     return {};
   }
 }
@@ -957,12 +948,8 @@ export async function ensureTrajectoriesTable(
         runtime,
         `CREATE INDEX IF NOT EXISTS idx_trajectories_scenario_id ON trajectories(scenario_id)`,
       );
-    } catch (err) {
-      warnRuntime(
-        runtime,
-        "[trajectory-persistence] scenario index creation failed",
-        err,
-      );
+    } catch {
+      // ignore if index creation fails
     }
     try {
       await executeRawSql(
@@ -977,12 +964,8 @@ export async function ensureTrajectoriesTable(
         runtime,
         `CREATE INDEX IF NOT EXISTS idx_trajectories_batch_id ON trajectories(batch_id)`,
       );
-    } catch (err) {
-      warnRuntime(
-        runtime,
-        "[trajectory-persistence] batch index creation failed",
-        err,
-      );
+    } catch {
+      // ignore if index creation fails
     }
     try {
       await executeRawSql(
@@ -1022,24 +1005,16 @@ export async function ensureTrajectoriesTable(
         runtime,
         `CREATE INDEX IF NOT EXISTS idx_trajectory_steps_trajectory_id ON trajectory_steps(trajectory_id)`,
       );
-    } catch (err) {
-      warnRuntime(
-        runtime,
-        "[trajectory-persistence] trajectory step index creation failed",
-        err,
-      );
+    } catch {
+      // ignore if index creation fails
     }
     try {
       await executeRawSql(
         runtime,
         `CREATE INDEX IF NOT EXISTS idx_trajectory_steps_ordinal ON trajectory_steps(trajectory_id, ordinal)`,
       );
-    } catch (err) {
-      warnRuntime(
-        runtime,
-        "[trajectory-persistence] trajectory step ordinal index creation failed",
-        err,
-      );
+    } catch {
+      // ignore if index creation fails
     }
 
     // One-shot forward migration from steps_json into trajectory_steps.

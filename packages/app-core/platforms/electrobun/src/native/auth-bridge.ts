@@ -32,7 +32,6 @@ import os from "node:os";
 import path from "node:path";
 
 import { getBrandConfig } from "../brand-config";
-import { logger } from "../logger";
 
 export const DESKTOP_BOOTSTRAP_ENDPOINT = "/api/auth/desktop-bootstrap";
 export const SESSION_COOKIE_NAME = "eliza_session";
@@ -76,17 +75,6 @@ interface DesktopBootstrapResponseBody {
   sessionId?: string;
   csrfToken?: string;
   expiresAt?: number;
-}
-
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
-function warnAuthBridge(
-  message: string,
-  context: Record<string, unknown>,
-): void {
-  logger.warn(`[DesktopAuthBridge] ${message}`, context);
 }
 
 // ── State paths ───────────────────────────────────────────────────────────────
@@ -139,9 +127,9 @@ export function resolveSocketDir(env: NodeJS.ProcessEnv = process.env): string {
 // ── Persisted-session round-trip ─────────────────────────────────────────────
 
 /**
- * Try to load a previously-minted desktop session. Missing files, wrong schema,
- * and expired sessions fall through to `bootstrapDesktopSession`; unreadable or
- * malformed files are logged before falling through.
+ * Try to load a previously-minted desktop session. Returns null on any failure
+ * (missing file, wrong schema, expired, malformed JSON). Failure is silent —
+ * caller is expected to fall through to `bootstrapDesktopSession`.
  */
 export function loadPersistedSession(
   env: NodeJS.ProcessEnv = process.env,
@@ -153,22 +141,14 @@ export function loadPersistedSession(
   let raw: string;
   try {
     raw = fs.readFileSync(sessionPath, "utf8");
-  } catch (err) {
-    warnAuthBridge("Failed to read persisted desktop session", {
-      sessionPath,
-      error: errorMessage(err),
-    });
+  } catch {
     return null;
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch (err) {
-    warnAuthBridge("Failed to parse persisted desktop session", {
-      sessionPath,
-      error: errorMessage(err),
-    });
+  } catch {
     return null;
   }
 
@@ -200,12 +180,8 @@ export function persistSession(
   // Best-effort tighten in case mkdir respected an inherited umask.
   try {
     fs.chmodSync(dir, 0o700);
-  } catch (err) {
-    warnAuthBridge("Failed to chmod desktop auth directory", {
-      dir,
-      mode: "0700",
-      error: errorMessage(err),
-    });
+  } catch {
+    /* non-fatal on platforms where chmod has no effect */
   }
   const sessionPath = resolveSessionPath(env);
   const body = JSON.stringify(
@@ -221,12 +197,8 @@ export function persistSession(
   fs.writeFileSync(sessionPath, body, { encoding: "utf8", mode: 0o600 });
   try {
     fs.chmodSync(sessionPath, 0o600);
-  } catch (err) {
-    warnAuthBridge("Failed to chmod persisted desktop session", {
-      sessionPath,
-      mode: "0600",
-      error: errorMessage(err),
-    });
+  } catch {
+    /* non-fatal */
   }
 }
 
@@ -236,11 +208,8 @@ export function clearPersistedSession(
   const sessionPath = resolveSessionPath(env);
   try {
     if (fs.existsSync(sessionPath)) fs.unlinkSync(sessionPath);
-  } catch (err) {
-    warnAuthBridge("Failed to clear persisted desktop session", {
-      sessionPath,
-      error: errorMessage(err),
-    });
+  } catch {
+    /* non-fatal */
   }
 }
 
@@ -275,12 +244,8 @@ function openBootstrapSocket(
   fs.mkdirSync(socketDir, { recursive: true, mode: 0o700 });
   try {
     fs.chmodSync(socketDir, 0o700);
-  } catch (err) {
-    warnAuthBridge("Failed to chmod desktop auth socket directory", {
-      socketDir,
-      mode: "0700",
-      error: errorMessage(err),
-    });
+  } catch {
+    /* non-fatal */
   }
 
   const socketPath = path.join(socketDir, socketName);
@@ -288,11 +253,8 @@ function openBootstrapSocket(
   // Stale socket from a previous crashed run — unlink before bind.
   try {
     if (fs.existsSync(socketPath)) fs.unlinkSync(socketPath);
-  } catch (err) {
-    warnAuthBridge("Failed to unlink stale desktop auth socket", {
-      socketPath,
-      error: errorMessage(err),
-    });
+  } catch {
+    /* swallowed; bind will report the real failure */
   }
 
   let resolveConsumed: () => void = () => {};
@@ -320,12 +282,8 @@ function openBootstrapSocket(
   // is enforced; on macOS UDS permissions are advisory but still useful.
   try {
     fs.chmodSync(socketPath, 0o600);
-  } catch (err) {
-    warnAuthBridge("Failed to chmod desktop auth socket", {
-      socketPath,
-      mode: "0600",
-      error: errorMessage(err),
-    });
+  } catch {
+    /* non-fatal */
   }
 
   return {
@@ -334,19 +292,13 @@ function openBootstrapSocket(
     close: () => {
       try {
         server.close();
-      } catch (err) {
-        warnAuthBridge("Failed to close desktop auth socket server", {
-          socketPath,
-          error: errorMessage(err),
-        });
+      } catch {
+        /* no-op */
       }
       try {
         if (fs.existsSync(socketPath)) fs.unlinkSync(socketPath);
-      } catch (err) {
-        warnAuthBridge("Failed to remove desktop auth socket", {
-          socketPath,
-          error: errorMessage(err),
-        });
+      } catch {
+        /* no-op */
       }
     },
   };
@@ -369,11 +321,7 @@ function isLoopbackBase(apiBase: string): boolean {
       host === "::1" ||
       host === "[::1]"
     );
-  } catch (err) {
-    warnAuthBridge("Invalid desktop auth API base", {
-      apiBase,
-      error: errorMessage(err),
-    });
+  } catch {
     return false;
   }
 }
@@ -411,10 +359,7 @@ export async function bootstrapDesktopSession(
   let socketHandle: BootstrapSocket | null = null;
   try {
     socketHandle = openBootstrapSocket(env, secret);
-  } catch (err) {
-    warnAuthBridge("Failed to open desktop auth bootstrap socket", {
-      error: errorMessage(err),
-    });
+  } catch {
     return null;
   }
 
@@ -438,11 +383,7 @@ export async function bootstrapDesktopSession(
   // Swallow that orphaned rejection so it can't surface as an unhandled
   // rejection and crash the Electrobun worker; the awaited path on line ~388
   // still re-throws normally because `.catch()` returns a separate chain.
-  consumedOrTimeout.catch((err: unknown) => {
-    logger.debug("[DesktopAuthBridge] Bootstrap socket was not consumed", {
-      error: errorMessage(err),
-    });
-  });
+  consumedOrTimeout.catch(() => {});
 
   let body: DesktopBootstrapResponseBody | null = null;
   try {
@@ -459,33 +400,19 @@ export async function bootstrapDesktopSession(
     if (!response.ok) {
       // 404 means the backend doesn't implement the endpoint yet — flag in
       // logs but stay silent in the UX so the renderer can still log in.
-      warnAuthBridge("Desktop auth bootstrap endpoint failed", {
-        url,
-        status: response.status,
-      });
       return null;
     }
 
-    try {
-      body = (await response.json()) as DesktopBootstrapResponseBody;
-    } catch (err) {
-      warnAuthBridge("Failed to parse desktop auth bootstrap response", {
-        url,
-        error: errorMessage(err),
-      });
-      return null;
-    }
+    body = (await response
+      .json()
+      .catch(() => null)) as DesktopBootstrapResponseBody | null;
 
     // Wait for the API to actually connect to the socket before we tear it
     // down. If the API never connects we still got an HTTP response, but the
     // session it minted was based on something other than filesystem proof —
     // refuse it.
     await consumedOrTimeout;
-  } catch (err) {
-    warnAuthBridge("Desktop auth bootstrap failed", {
-      url,
-      error: errorMessage(err),
-    });
+  } catch {
     return null;
   } finally {
     socketHandle.close();
@@ -526,11 +453,9 @@ export async function loadOrCreateDesktopSession(
 
   try {
     persistSession(fresh, env);
-  } catch (err) {
-    warnAuthBridge("Failed to persist desktop session", {
-      sessionPath: resolveSessionPath(env),
-      error: errorMessage(err),
-    });
+  } catch {
+    // Persistence is best-effort: even without it, the renderer is logged in
+    // for the lifetime of this process.
   }
   return fresh;
 }
@@ -585,11 +510,7 @@ export function installDesktopSessionCookies(
     let parsed: URL;
     try {
       parsed = new URL(origin);
-    } catch (err) {
-      warnAuthBridge("Invalid desktop session cookie origin", {
-        origin,
-        error: errorMessage(err),
-      });
+    } catch {
       return;
     }
     const key = parsed.origin;

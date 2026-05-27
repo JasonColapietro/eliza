@@ -1,4 +1,3 @@
-import { logger } from "../logger";
 import type { SendToWebview } from "../types.js";
 
 interface GeoPosition {
@@ -27,10 +26,6 @@ const IP_GEO_SERVICES = [
  * the Swift shell.
  */
 const IP_GEO_ACCURACY_METERS = 5000;
-
-function locationErrorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
 
 export class LocationManager {
   private sendToWebview: SendToWebview | null = null;
@@ -62,12 +57,7 @@ export class LocationManager {
         };
         this.lastKnown = position;
         return position;
-      } catch (err) {
-        logger.warn("[Location] IP geolocation provider failed", {
-          url,
-          error: locationErrorMessage(err),
-        });
-      }
+      } catch {}
     }
     return null;
   }
