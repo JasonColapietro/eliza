@@ -56,7 +56,7 @@ export function StewardWalletProviders({
             : http("https://base-rpc.publicnode.com"),
           [bsc.id]: http("https://bsc-dataseed.binance.org"),
         },
-        ssr: false,
+        ssr: true,
       }),
     [alchemyKey, appUrl, walletConnectProjectId],
   );
