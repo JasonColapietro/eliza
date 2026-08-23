@@ -62,6 +62,13 @@ plugins/plugin-discord/**/*.d.ts.map
 packages/plugin-worker-runtime/src/**/*.d.ts
 packages/plugin-worker-runtime/src/**/*.d.ts.map
 
+# Stray declaration emit next to TS in plugin-remote-manifest and cloud-sdk
+# (canonical declarations live under dist/)
+packages/plugin-remote-manifest/src/**/*.d.ts
+packages/plugin-remote-manifest/src/**/*.d.ts.map
+packages/cloud-sdk/src/**/*.d.ts
+packages/cloud-sdk/src/**/*.d.ts.map
+
 # Accidental JS/sourcemap emit next to TS in @elizaos/core (build output is dist/)
 packages/core/src/**/*.js
 packages/core/src/**/*.js.map
