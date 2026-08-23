@@ -39,6 +39,12 @@ const IPC_OP_CLOSE = 2;
 const IPC_OP_PING = 3;
 const IPC_OP_PONG = 4;
 
+// Discord's local RPC frames carry a JSON payload; real ones are a few KB at
+// most. handleSocketData buffers until a declared frame is complete, so an
+// unbounded length lets a peer on the IPC socket hold readBuffer open and grow
+// it without limit. Cap it far above any legitimate payload.
+const IPC_MAX_PAYLOAD_BYTES = 8 * 1024 * 1024;
+
 type DiscordLocalConfig = {
   enabled: boolean;
   clientId: string;
@@ -843,6 +849,13 @@ export class DiscordLocalService extends Service {
       const length = this.readBuffer.readInt32LE(4);
       if (length < 0) {
         logger.warn("[discord-local] Discarding malformed IPC frame with negative payload length");
+        this.readBuffer = Buffer.alloc(0);
+        return;
+      }
+      if (length > IPC_MAX_PAYLOAD_BYTES) {
+        logger.warn(
+          `[discord-local] Discarding IPC frame declaring ${length} bytes, above the ${IPC_MAX_PAYLOAD_BYTES}-byte payload cap`
+        );
         this.readBuffer = Buffer.alloc(0);
         return;
       }
