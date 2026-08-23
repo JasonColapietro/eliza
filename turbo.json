@@ -323,7 +323,7 @@
       "outputs": []
     },
     "@elizaos/example-telegram#typecheck": {
-      "dependsOn": ["@elizaos/plugin-sql#build"],
+      "dependsOn": ["@elizaos/core#build", "@elizaos/plugin-sql#build", "^build"],
       "outputs": []
     },
     "@elizaos/example-farcaster#build": {

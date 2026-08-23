@@ -12,7 +12,14 @@
     "lib": ["ES2022"],
     "types": ["node", "bun-types"],
     "paths": {
-      "@elizaos/core": ["./../../core/dist/index.d.ts"]
+      "@elizaos/core": ["./../../core/dist/index.d.ts"],
+      "@elizaos/plugin-openai": [
+        "./../../../plugins/plugin-openai/src/index.ts"
+      ],
+      "@elizaos/plugin-sql": ["./../../../plugins/plugin-sql/src/index.ts"],
+      "@elizaos/plugin-telegram": [
+        "./../../../plugins/plugin-telegram/src/index.ts"
+      ]
     }
   },
   "include": ["*.ts", "*.d.ts"],

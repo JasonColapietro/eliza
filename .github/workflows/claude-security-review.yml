@@ -50,7 +50,24 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 2
 
+      # The review action hard-fails when the key is absent, which turns an
+      # unconfigured fork into a permanently red required check. Probe first so
+      # the job reports honestly instead. Where the secret IS configured this is
+      # a no-op and the review runs exactly as before.
+      - name: Check for ANTHROPIC_API_KEY
+        id: keycheck
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Security review skipped::ANTHROPIC_API_KEY is not configured for this repository, so the Claude security review did not run. Add the secret to enable it."
+          fi
+
       - name: Run Claude Security Review
+        if: steps.keycheck.outputs.configured == 'true'
         # Note: Using @main as no stable version tag exists yet
         uses: anthropics/claude-code-security-review@main
         with:
