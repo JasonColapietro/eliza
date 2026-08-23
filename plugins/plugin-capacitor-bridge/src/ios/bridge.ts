@@ -120,8 +120,17 @@ type AgentModule = {
 	dispatchRoute: DispatchRoute;
 };
 
+// @elizaos/agent depends on this package, so declaring it as a dependency here
+// would be a cycle. It is loaded lazily at runtime and the result is cast to
+// the local AgentModule type above, so the module's own declarations are never
+// used. Holding the specifier in a constant keeps TypeScript from resolving a
+// package that is deliberately not a dependency: consumers that map this file
+// into their own program (packages/examples/autonomous, for one) otherwise fail
+// typecheck with TS2307 on a module they have no reason to depend on.
+const AGENT_MODULE_SPECIFIER = "@elizaos/agent";
+
 async function loadAgentModule(): Promise<AgentModule> {
-	return (await import("@elizaos/agent")) as AgentModule;
+	return (await import(AGENT_MODULE_SPECIFIER)) as AgentModule;
 }
 
 interface IosBridgeHost {
