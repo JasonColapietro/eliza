@@ -724,6 +724,7 @@ function copyPackageDir(
   targetNodeModules: string,
   rootDestDir: string,
 ): boolean {
+  ensureWorkspaceRuntimeEntriesBuilt(name, sourceDir);
   const dest = packagePath(name, targetNodeModules);
   fs.rmSync(dest, { recursive: true, force: true });
   fs.mkdirSync(path.dirname(dest), { recursive: true });
@@ -769,6 +770,43 @@ function copyPackageDir(
   pruneCopiedPackageDir(name, dest);
   patchCopiedPackageRuntimeSurface(name, dest, rootDestDir);
   return true;
+}
+
+function ensureWorkspaceRuntimeEntriesBuilt(
+  name: string,
+  sourceDir: string,
+): void {
+  const relativeSourceDir = path.relative(ROOT, sourceDir);
+  const isWorkspacePackage =
+    Boolean(relativeSourceDir) &&
+    !relativeSourceDir.startsWith("..") &&
+    !path.isAbsolute(relativeSourceDir) &&
+    (relativeSourceDir.startsWith(`packages${path.sep}`) ||
+      relativeSourceDir.startsWith(`plugins${path.sep}`));
+  if (!isWorkspacePackage) return;
+
+  const packageJsonPath = path.join(sourceDir, "package.json");
+  const missingEntries = getRequiredRuntimeEntryPaths(packageJsonPath).filter(
+    (entryPath) => !runtimeManifestEntryExists(sourceDir, entryPath),
+  );
+  if (missingEntries.length === 0) return;
+
+  console.log(
+    `[runtime-copy] building ${name} because required runtime entries are absent: ${missingEntries.join(", ")}`,
+  );
+  execFileSync("bun", ["run", "build"], {
+    cwd: sourceDir,
+    stdio: "inherit",
+  });
+
+  const stillMissing = getRequiredRuntimeEntryPaths(packageJsonPath).filter(
+    (entryPath) => !runtimeManifestEntryExists(sourceDir, entryPath),
+  );
+  if (stillMissing.length > 0) {
+    throw new Error(
+      `[runtime-copy] ${name} build completed without required runtime entries: ${stillMissing.join(", ")}`,
+    );
+  }
 }
 
 function shouldSkipPackagedAppCoreEntry(relativeEntry: string): boolean {
