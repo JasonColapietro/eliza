@@ -313,7 +313,9 @@ export async function readCompatJsonBody(
   }
 }
 
-export function hasCompatPersistedFirstRunState(config: ElizaConfig): boolean {
+export function hasCompatPersistedFirstRunState(
+  config: ElizaConfig,
+): boolean {
   if ((config.meta as Record<string, unknown>)?.firstRunComplete === true) {
     return true;
   }

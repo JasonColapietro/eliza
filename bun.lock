@@ -1383,9 +1383,6 @@
     "packages/examples/form": {
       "name": "@elizaos/example-form",
       "version": "2.0.0-beta.0",
-      "dependencies": {
-        "@elizaos/example-chat": "workspace:*",
-      },
     },
     "packages/examples/game-of-life": {
       "name": "@elizaos/example-game-of-life",
@@ -2460,7 +2457,6 @@
         "playwright": "^1.59.1",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "sharp": "^0.34.5",
         "typescript": "^6.0.3",
         "vitest": "^4.0.0",
       },

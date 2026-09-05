@@ -30,7 +30,6 @@
       "@elizaos/agent/config/*": ["../../packages/agent/src/config/*.ts"],
       "@elizaos/agent/utils/*": ["../../packages/agent/src/utils/*.ts"],
       "@elizaos/agent/services/*": ["../../packages/agent/src/services/*.ts"],
-      "@elizaos/plugin-commands": ["../../plugins/plugin-commands/src/index.ts"],
       "@elizaos/app-core": ["../../packages/app-core/src/index.ts"],
       "@elizaos/app-core/agent-bridge": ["../../packages/app-core/src/agent-bridge.ts"],
       "@elizaos/app-core/*": ["../../packages/app-core/src/*"],
