@@ -141,7 +141,7 @@ jobs:
         run: bun install --frozen-lockfile || bun install --no-frozen-lockfile
 
       - name: Build worker runtime
-        run: bun run --cwd packages/plugin-worker-runtime build
+        run: bunx turbo run build --filter=@elizaos/plugin-worker-runtime...
 
       - name: Boot dev agent
         env:
