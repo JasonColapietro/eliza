@@ -314,7 +314,7 @@ grep -q 'text-\[#0B35F1\]' \
     "${REPO_ROOT}/packages/ui/src/components/shell/StartupFailureView.tsx"
 grep -q 'data-testid="first-run-shell"' \
     "${REPO_ROOT}/packages/ui/src/components/shell/FirstRunShell.tsx"
-grep -q 'bg-\[#F7F9FF\]' \
+grep -q 'bg-transparent' \
     "${REPO_ROOT}/packages/ui/src/components/shell/FirstRunShell.tsx"
 if rg -n 'bg-bg|bg-card|text-accent|bg-accent|text-warn|text-ok|text-danger|#FF5800|#ff5800|#ffe600|#f0b90b' \
     "${REPO_ROOT}/packages/ui/src/components/shell/FirstRunShell.tsx"

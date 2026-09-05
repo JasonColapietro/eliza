@@ -140,6 +140,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile || bun install --no-frozen-lockfile
 
+      - name: Build worker runtime
+        run: bun run --cwd packages/plugin-worker-runtime build
+
       - name: Boot dev agent
         env:
           ELIZA_API_PORT: "31337"
