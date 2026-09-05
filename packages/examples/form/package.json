@@ -11,6 +11,9 @@
     "build": "bun run --cwd ../chat build",
     "lint": "bunx @biomejs/biome check --write --unsafe ."
   },
+  "dependencies": {
+    "@elizaos/example-chat": "workspace:*"
+  },
   "engines": {
     "node": ">=24.0.0"
   }
