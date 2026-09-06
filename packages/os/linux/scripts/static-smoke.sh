@@ -312,9 +312,7 @@ grep -q 'bg-\[#F7F9FF\]' \
     "${REPO_ROOT}/packages/ui/src/components/shell/StartupFailureView.tsx"
 grep -q 'text-\[#0B35F1\]' \
     "${REPO_ROOT}/packages/ui/src/components/shell/StartupFailureView.tsx"
-grep -q 'data-testid="first-run-shell"' \
-    "${REPO_ROOT}/packages/ui/src/components/shell/FirstRunShell.tsx"
-grep -q 'bg-\[#F7F9FF\]' \
+rg -Uq 'data-testid="first-run-shell"\s*className="[^"]*bg-transparent[^"]*"' \
     "${REPO_ROOT}/packages/ui/src/components/shell/FirstRunShell.tsx"
 if rg -n 'bg-bg|bg-card|text-accent|bg-accent|text-warn|text-ok|text-danger|#FF5800|#ff5800|#ffe600|#f0b90b' \
     "${REPO_ROOT}/packages/ui/src/components/shell/FirstRunShell.tsx"
@@ -1123,7 +1121,7 @@ grep -q 'TAILS_ROOT = Path(__file__).resolve().parents\[2\]' \
 grep -q 'CHROOT_DIR = TAILS_ROOT / "chroot"' \
     tails/auto/scripts/create-usb-image-from-iso
 grep -qx 'sudo' tails/config/chroot_local-packageslists/tails-common.list
-grep -qx 'syslinux' tails/config/chroot_local-packageslists/tails-common.list
+grep -qx 'syslinux \[amd64\]' tails/config/chroot_local-packageslists/tails-common.list
 grep -q 'elizaos.sbomLite' scripts/generate-release-evidence.mjs
 grep -q 'elizaos.releaseProvenance' scripts/generate-release-evidence.mjs
 grep -q 'elizaos.modelCatalog' scripts/validate-model-catalog.mjs
