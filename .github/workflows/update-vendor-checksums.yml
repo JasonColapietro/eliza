@@ -103,5 +103,4 @@ jobs:
           EOF
           )" \
             --base develop \
-            --head "$BRANCH" \
-            --label "dependencies,automated"
+            --head "$BRANCH"
