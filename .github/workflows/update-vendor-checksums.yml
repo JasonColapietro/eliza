@@ -24,6 +24,7 @@ jobs:
           set -euo pipefail
 
           CHECKSUMS_FILE="packages/os/setup/vendor/checksums.json"
+          cp "$CHECKSUMS_FILE" "$RUNNER_TEMP/vendor-checksums-before.json"
 
           download_and_hash() {
             local platform="$1"
@@ -53,11 +54,18 @@ jobs:
           download_and_hash "linux"  "https://dl.google.com/android/repository/platform-tools-latest-linux.zip"
           download_and_hash "win32"  "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
 
-          # Update the timestamp
-          jq --arg ts "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-             '."last-updated" = $ts' \
-             "$CHECKSUMS_FILE" > "${CHECKSUMS_FILE}.tmp"
-          mv "${CHECKSUMS_FILE}.tmp" "$CHECKSUMS_FILE"
+          # A timestamp-only diff starts the repository's full PR matrix for no
+          # checksum change. Preserve the original file unless content changed.
+          if cmp -s \
+            <(jq -S 'del(."last-updated")' "$RUNNER_TEMP/vendor-checksums-before.json") \
+            <(jq -S 'del(."last-updated")' "$CHECKSUMS_FILE"); then
+            cp "$RUNNER_TEMP/vendor-checksums-before.json" "$CHECKSUMS_FILE"
+          else
+            jq --arg ts "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+               '."last-updated" = $ts' \
+               "$CHECKSUMS_FILE" > "${CHECKSUMS_FILE}.tmp"
+            mv "${CHECKSUMS_FILE}.tmp" "$CHECKSUMS_FILE"
+          fi
 
           echo "Updated checksums.json:"
           cat "$CHECKSUMS_FILE"
@@ -103,5 +111,4 @@ jobs:
           EOF
           )" \
             --base develop \
-            --head "$BRANCH" \
-            --label "dependencies,automated"
+            --head "$BRANCH"
