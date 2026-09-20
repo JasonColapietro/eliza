@@ -1,14 +1,13 @@
 name: Hetzner E2E Reaper
 
-# Belt-and-suspenders cleanup. Runs every 30 minutes and deletes any
+# Belt-and-suspenders cleanup. Manual-only in this fork to avoid consuming
+# Suede Actions budget. Deletes any
 # `ci=true,workflow=hetzner-e2e` servers older than 60 minutes — in
 # case a crashed workflow leaks one. Gracefully no-ops when
 # HCLOUD_TOKEN_CI isn't set so it doesn't spam-fail before secrets
 # are configured.
 
 on:
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 concurrency:
