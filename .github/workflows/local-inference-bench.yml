@@ -4,10 +4,10 @@ name: Local Inference Bench
 # agnostic — it just talks HTTP to whatever agent is reachable at
 # --target — so we run it in two layers:
 #
-#   1. PR + nightly: harness route smoke. Boots
+#   1. PR: harness route smoke. Boots
 #      `packages/scripts/benchmark/stub-agent-server.mjs` on a free port and checks
 #      only `/api/health`; it does not write benchmark artifacts.
-#   2. Nightly only: real agent profile. Boots `bun run dev`, points the
+#   2. Manual only: real agent profile. Boots `bun run dev`, points the
 #      harness at the dev server, writes the report under
 #      `reports/porting/<YYYY-MM-DD>/profile.{json,md}`, uploads the
 #      directory as a workflow artifact, and opens/updates a tracking
@@ -19,12 +19,6 @@ name: Local Inference Bench
 # operator chain the two workflows.
 
 on:
-  schedule:
-    # 05:00 UTC — runs after the nightly publish job at 04:00 UTC so
-    # the dev server gets the latest packages.
-    - cron: "0 5 * * *"
-    # 04:30 UTC Sunday — weekly eliza-1 model publish window.
-    - cron: "30 4 * * 0"
   pull_request:
     paths:
       - "scripts/benchmark/**"
@@ -114,9 +108,9 @@ jobs:
           fi
 
   nightly-real-agent:
-    name: Nightly real-agent profile
+    name: Real-agent profile (manual)
     needs: stub-validation
-    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_real_agent == true) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_real_agent == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -324,9 +318,7 @@ jobs:
     # (forks, dry-test branches), the job no-ops with an explicit
     # warning so unrelated workflow runs don't fail.
     name: Publish eliza-1 models (weekly)
-    if: >-
-      (github.event_name == 'schedule' && github.event.schedule == '30 4 * * 0') ||
-      (github.event_name == 'workflow_dispatch' && inputs.run_publish_models == true)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_publish_models == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
